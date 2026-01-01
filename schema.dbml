@@ -1,0 +1,447 @@
+Project "Hotel Management System" {
+  database_type: "mysql"
+  note: "Laravel 10+, PHP 8.4.1, Livewire/Volt, Pest "
+}
+
+
+/* =========================
+   Core Accommodation
+   ========================= */
+
+Table hotels {
+  id bigint [pk, increment]
+  name varchar(255)
+  code varchar(50) [unique]
+  country_code char(2) [null]
+  timezone_id bigint [null]
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    country_code
+    timezone_id
+  }
+}
+
+Table room_types {
+  id bigint [pk, increment]
+  hotel_id bigint
+  name varchar(100)
+  max_adults smallint
+  max_children smallint
+  base_occupancy smallint
+  price_off_peak decimal(10,2)
+  price_peak decimal(10,2)
+  active_rate varchar(20) [default: 'off_peak']
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    hotel_id
+  }
+}
+
+Table rooms {
+  id bigint [pk, increment]
+  hotel_id bigint
+  room_type_id bigint
+  number varchar(50)
+  floor varchar(50) [null]
+  status varchar(32) // Available/Occupied/Cleaning/OOS
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    hotel_id
+    room_type_id
+    status
+    (hotel_id, number) [unique]
+  }
+}
+
+/* =========================
+   Authentication & RBAC
+   ========================= */
+
+Table users {
+  id bigint [pk, increment]
+  name varchar(255)
+  email varchar(255) [unique]
+  email_verified_at datetime [null]
+  password varchar(255)
+  two_factor_secret text [null]
+  two_factor_recovery_codes text [null]
+  two_factor_confirmed_at timestamp [null]
+  remember_token varchar(100) [null]
+  created_at datetime
+  updated_at datetime
+}
+
+Table password_reset_tokens {
+  email varchar(255) [pk]
+  token varchar(255)
+  created_at timestamp [null]
+}
+
+Table sessions {
+  id varchar(255) [pk]
+  user_id bigint [null]
+  ip_address varchar(45) [null]
+  user_agent text [null]
+  payload longtext
+  last_activity int
+  Indexes {
+    user_id
+    last_activity
+  }
+}
+
+Table customer_users {
+  id bigint [pk, increment]
+  user_id bigint [unique] // 1–1 with users
+  avatar varchar(255) [null]
+  name varchar(150) [null]
+  email varchar(255) [null]
+  phone varchar(40) [null]
+
+  address_line1 varchar(255) [null]
+  address_line2 varchar(255) [null]
+  city varchar(120) [null]
+  state varchar(120) [null]
+  postal_code varchar(40) [null]
+  country varchar(120) [null]
+
+  billing_address_line1 varchar(255) [null]
+  billing_address_line2 varchar(255) [null]
+  billing_city varchar(120) [null]
+  billing_state varchar(120) [null]
+  billing_postal_code varchar(40) [null]
+  billing_country varchar(120) [null]
+
+  card_brand varchar(30) [null]
+  card_last_four char(4) [null]
+  card_exp_month smallint [null]
+  card_exp_year smallint [null]
+  card_number_hash varchar(191) [null]
+  card_cvv_hash varchar(191) [null]
+  payment_customer_id varchar(191) [null]
+
+  created_at datetime
+  updated_at datetime
+
+  Indexes {
+    user_id
+    email
+  }
+}
+
+Table staff_users {
+  id bigint [pk, increment]
+  hotel_id bigint
+  name varchar(150)
+  email varchar(255)
+  email_verified_at datetime [null]
+  password varchar(255)
+  remember_token varchar(100) [null]
+  role varchar(100) // manager/frontdesk (check constraint)
+  title varchar(100) [null]
+  department varchar(100) [null]
+  employment_status varchar(50) [null] // Active/Inactive/On Leave
+  avatar varchar(255) [null]
+  phone varchar(40) [null]
+  address_line1 varchar(255) [null]
+  address_line2 varchar(255) [null]
+  city varchar(120) [null]
+  state varchar(120) [null]
+  postal_code varchar(40) [null]
+  country varchar(120) [null]
+  last_login_at datetime [null]
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    hotel_id
+    role
+    department
+    email [unique]
+  }
+}
+
+Table admin_users {
+  id bigint [pk, increment]
+  username varchar(100) [unique]
+  name varchar(150)
+  password varchar(255)
+  is_active boolean [default: true]
+  remember_token varchar(100) [null]
+  last_login_at timestamp [null]
+  created_at datetime
+  updated_at datetime
+}
+
+/* =========================
+   Reservations & Occupants
+   ========================= */
+
+Table reservations {
+  id bigint [pk, increment]
+  hotel_id bigint
+  customer_id bigint
+  incremental_no int [null]
+  code varchar(50) [unique]
+  status varchar(32) // Pending/Confirmed/CheckedIn/NoShow/Cancelled/CheckedOut
+  check_in_date date
+  check_out_date date
+  adults smallint
+  children smallint
+  nightly_rate decimal(10,2) [null] // snapshot (optional)
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    hotel_id
+    customer_id
+    check_in_date
+    check_out_date
+    (hotel_id, incremental_no) [unique]
+  }
+}
+
+Table reservation_room {
+  id bigint [pk, increment]
+  hotel_id bigint
+  reservation_id bigint
+  room_id bigint
+  from_date date
+  to_date date
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    hotel_id
+    reservation_id
+    room_id
+    from_date
+    to_date
+    (hotel_id, reservation_id, room_id) [unique]
+  }
+}
+
+Table reservation_occupants {
+  id bigint [pk, increment]
+  reservation_id bigint
+  full_name varchar(150)
+  age tinyint [null]
+  type varchar(20) [null] // Adult/Child/Infant (optional)
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    reservation_id
+  }
+}
+
+/* =========================
+   Check-in / Check-out
+   ========================= */
+
+Table check_ins {
+  id bigint [pk, increment]
+  reservation_id bigint
+  room_id bigint
+  handled_by bigint [null] // staff_users.id
+  checked_in_at timestamp
+  identity_verified boolean [default: false]
+  identity_document_type varchar(100) [null]
+  identity_document_number varchar(120) [null]
+  identity_notes text [null]
+  preauth_amount decimal(10,2) [null]
+  preauth_method varchar(100) [null]
+  preauth_reference varchar(191) [null]
+  preauth_status varchar(50) [null]
+  remarks text [null]
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    reservation_id
+    room_id
+    handled_by
+    checked_in_at
+  }
+}
+
+Table check_outs {
+  id bigint [pk, increment]
+  reservation_id bigint
+  room_id bigint
+  handled_by bigint [null] // staff_users.id
+  checked_out_at timestamp
+  room_charges_total decimal(10,2) [default: 0]
+  extras_breakdown json [null]
+  extras_total decimal(10,2) [default: 0]
+  grand_total decimal(10,2) [default: 0]
+  final_payment_method varchar(100) [null]
+  final_payment_reference varchar(191) [null]
+  final_payment_status varchar(50) [null]
+  settled_at timestamp [null]
+  notes text [null]
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    reservation_id
+    room_id
+    handled_by
+    checked_out_at
+  }
+}
+
+/* =========================
+   Folio / Charges / Payments
+   ========================= */
+
+Table folios {
+  id bigint [pk, increment]
+  reservation_id bigint
+  folio_no varchar(50) [unique]
+  status varchar(20) // Open/Closed
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    reservation_id
+    status
+  }
+}
+
+Table charges {
+  id bigint [pk, increment]
+  folio_id bigint
+  post_date date
+  description varchar(255)
+  qty decimal(10,2) [default: 1.00]
+  unit_price decimal(10,2)
+  tax_amount decimal(10,2) [default: 0.00]
+  total_amount decimal(10,2)
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    folio_id
+    post_date
+  }
+}
+
+Table payments {
+  id bigint [pk, increment]
+  folio_id bigint
+  method varchar(32) // Cash/Card/Transfer
+  amount decimal(10,2)
+  txn_ref varchar(100) [null]
+  paid_at timestamp
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    folio_id
+    method
+    paid_at
+  }
+}
+
+/* =========================
+   Infrastructure & Ops
+   ========================= */
+
+Table cache {
+  key varchar(255) [pk]
+  value mediumtext
+  expiration int
+}
+
+Table cache_locks {
+  key varchar(255) [pk]
+  owner varchar(255)
+  expiration int
+}
+
+Table jobs {
+  id bigint [pk, increment]
+  queue varchar(255)
+  payload longtext
+  attempts tinyint
+  reserved_at int [null]
+  available_at int
+  created_at int
+  Indexes {
+    queue
+  }
+}
+
+Table job_batches {
+  id varchar(255) [pk]
+  name varchar(255)
+  total_jobs int
+  pending_jobs int
+  failed_jobs int
+  failed_job_ids longtext
+  options mediumtext [null]
+  cancelled_at int [null]
+  created_at int
+  finished_at int [null]
+}
+
+Table failed_jobs {
+  id bigint [pk, increment]
+  uuid varchar(255) [unique]
+  connection text
+  queue text
+  payload longtext
+  exception longtext
+  failed_at timestamp
+}
+
+Table timezones {
+  id bigint [pk, increment]
+  country_code char(2)
+  country_name varchar(120)
+  timezone varchar(191)
+  created_at datetime
+  updated_at datetime
+  Indexes {
+    country_code
+    (country_code, timezone) [unique]
+  }
+}
+
+Table countries {
+  id bigint [pk, increment]
+  code char(2) [unique]
+  name varchar(150) [unique]
+  created_at datetime
+  updated_at datetime
+}
+
+/* =========================
+   Relationships
+   ========================= */
+
+Ref: room_types.hotel_id > hotels.id
+Ref: rooms.hotel_id > hotels.id
+Ref: rooms.room_type_id > room_types.id
+
+Ref: customer_users.user_id > users.id
+Ref: staff_users.hotel_id > hotels.id
+
+Ref: reservations.hotel_id > hotels.id
+Ref: reservations.customer_id > customer_users.id
+
+Ref: reservation_room.hotel_id > hotels.id
+Ref: reservation_room.reservation_id > reservations.id
+Ref: reservation_room.room_id > rooms.id
+
+Ref: reservation_occupants.reservation_id > reservations.id
+
+Ref: check_ins.reservation_id > reservations.id
+Ref: check_ins.room_id > rooms.id
+Ref: check_ins.handled_by > staff_users.id
+
+Ref: check_outs.reservation_id > reservations.id
+Ref: check_outs.room_id > rooms.id
+Ref: check_outs.handled_by > staff_users.id
+
+Ref: folios.reservation_id > reservations.id
+Ref: charges.folio_id > folios.id
+Ref: payments.folio_id > folios.id
+
+Ref: hotels.country_code > countries.code
+Ref: hotels.timezone_id > timezones.id
