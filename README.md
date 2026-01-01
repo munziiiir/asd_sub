@@ -104,4 +104,3 @@ This project will run on MySQL instead of the default SQLite. Follow the steps b
   | Evelyn Guest        | evelyn.guest@asd.test         | Evelyn#2025! |
   | Farah Explorer      | farah.explorer@asd.test       | Farah#2025!  |
 
-All credentials are for local/demo use only—rotate or override via env when deploying.
