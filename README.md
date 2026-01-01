@@ -89,3 +89,19 @@ This project will run on MySQL instead of the default SQLite. Follow the steps b
    php artisan serve
    npm run dev   # if you need Vite assets
    ```
+
+## Seeded accounts (demo only)
+- **Admin (back office)** — username `ADMIN_BOOT_USERNAME` (default `admin`), password `ADMIN_BOOT_PASSWORD` (default `Adm1n#2025!`), name `ADMIN_BOOT_NAME` (default `System Administrator`). See `database/seeders/AdminUserSeeder.php`.
+- **Staff per hotel (20 hotels)** — manager password `Mngr#2025!`; front desk password `Front#2025!`. Emails are the slugged staff name with dots at `@lexiqa.com` (e.g., `amelia.patel@lexiqa.com`, `isla.turner@lexiqa.com`). See `database/seeders/StaffUserSeeder.php` for the full name lists.
+- **Customer web accounts** (seeded in `database/seeders/ReservationsSeeder.php`):
+
+  | Name                | Email                         | Password     |
+  | ------------------- | ----------------------------- | ------------ |
+  | Alice Customer      | alice.customer@asd.test       | Alice#2025!  |
+  | Bob Booker          | bob.booker@asd.test           | Bob#2025!    |
+  | Catherine Planner   | cat.planner@asd.test          | Cat#2025!    |
+  | Diego Traveler      | diego.traveler@asd.test       | Diego#2025!  |
+  | Evelyn Guest        | evelyn.guest@asd.test         | Evelyn#2025! |
+  | Farah Explorer      | farah.explorer@asd.test       | Farah#2025!  |
+
+All credentials are for local/demo use only—rotate or override via env when deploying.
